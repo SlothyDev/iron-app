@@ -1,10 +1,16 @@
 # 	Iron :weight_lifting: 
-## A gym-centered social media app designed to help one achieve more than what they are capable of.
-> **_"As iron sharpens iron, so one person sharpens another"_**
+*A gym-centered social media app designed to help you achieve more than what you thought was possible.*
+
+*"As iron sharpens iron, so one person sharpens another"*
 
 
   ## What is Iron? 
-  Iron was developed under the key concept of allowing athletes and fitness enthusiasts to share their passion: Tracking workouts, connecting with others, and helping users stay motivated were the key goals behind the app's development process.
+  Iron was developed under the key concept of allowing athletes and fitness enthusiasts to share their passion.
+
+  The app focuses on 3 main goals:
+  1. **Tracking Workouts** - Keep a log of exercises, sets, reps, and weights.
+  2. **Connecting with Others** - Share progress, motivate friends, and engage in your community.
+  3. **Staying Motivated** - Visualize progress and stay accountable with analytics.
 
   ## Features
 
@@ -53,6 +59,5 @@
 * Screenshots and videos will be added as the app progresses
 
 Built with love, 
-
-\- Faisal Khan.
+**Faisal Khan**
 
