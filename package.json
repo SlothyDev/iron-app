@@ -19,9 +19,11 @@
     "@react-navigation/stack": "^7.3.2",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
-    "expo": "^54.0.13",
+    "expo": "~54.0.35",
     "expo-auth-session": "~7.0.8",
+    "expo-dev-client": "~6.0.21",
     "expo-image-picker": "~17.0.8",
+    "expo-modules-core": "~3.0.30",
     "expo-status-bar": "~3.0.8",
     "expo-web-browser": "~15.0.8",
     "firebase": "^11.7.3",
@@ -52,5 +54,11 @@
     "react-native-dotenv": "^3.4.11",
     "react-native-svg-transformer": "^1.5.1"
   },
-  "private": true
+  "private": true,
+  "allowScripts": {
+    "firebase@11.7.3": true,
+    "fsevents@2.3.3": true,
+    "protobufjs@7.6.4": true,
+    "@firebase/util@1.11.3": true
+  }
 }
