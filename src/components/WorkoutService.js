@@ -12,7 +12,69 @@ import {
   Timestamp
 } from 'firebase/firestore';
 
+export async function saveUserWorkout(userId, workout) {
+  const workoutId =
+    workout.id || doc(collection(db, 'users', userId, 'workouts')).id;
+
+  const now = serverTimestamp();
+
+  const baseData = {
+    id: workoutId,
+    userId,
+
+    title: workout.title || "Untitled Workout",
+    comments: workout.comments || "",
+    isPublic: !!workout.isPublic,
+
+    workoutDate: workout.workoutDate || Timestamp.now(),
+
+    likeCount: workout.likeCount ?? 0,
+    commentCount: workout.commentCount ?? 0,
+
+    exercises: workout.exercises || [],
+
+    createdAt: workout.createdAt ?? now,
+    updatedAt: now,
+  };
+
+  await setDoc(
+    doc(db, 'users', userId, 'workouts', workoutId),
+    baseData,
+    { merge: true }
+  );
+
+  return baseData;
+}
+
+export async function publishWorkoutPost(userId, workout) {
+  if (!workout.isPublic) return;
+
+  const userSnap = await getDoc(doc(db, 'users', userId));
+  const user = userSnap.data();
+
+  const post = {
+    ...workout,
+
+    userId,
+
+    // 👇 feed identity fields
+    username: user?.username || "Unknown",
+    photoURL: user?.profilePicUrl || null,
+
+    createdAt: workout.createdAt || serverTimestamp(),
+  };
+
+  // 3. write to posts collection
+  await setDoc(doc(db, 'posts', workout.id), post, { merge: true });
+}
+
 export async function saveWorkout(userId, workout) {
+  const baseData = await saveUserWorkout(userId, workout);
+  await publishWorkoutPost(userId, baseData);
+  return baseData;
+}
+
+/*export async function saveWorkout(userId, workout) {
   try {
     const workoutId =
       workout.id || doc(collection(db, 'users', userId, 'workouts')).id;
@@ -60,7 +122,7 @@ export async function saveWorkout(userId, workout) {
     console.error('Error saving workout:', error);
     throw error;
   }
-}
+*/
 
 export async function getWorkouts(userId) {
   try {

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,11 @@ import {
   StyleSheet,
   SectionList,
   FlatList,
+
 } from 'react-native';
 import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useTheme } from '../ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
-
 const dummyExercises = require('../../../data/exercises_detailed.json');
 
 const broadMuscleGroups = {
@@ -60,11 +60,25 @@ export default function SelectExerciseScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBroadMuscleGroup, setSelectedBroadMuscleGroup] = useState(null);
 
+  const listRef = useRef(null);
+
+  useEffect(() => {
+    listRef.current?.scrollToLocation({
+      sectionIndex: 0,
+      itemIndex: 0,
+      animated: false,
+    });
+  }, [searchQuery, selectedBroadMuscleGroup]);
+
   const styles = getStyles(isDark);
 
   const filteredExercises = useMemo(() => {
   const query = searchQuery.toLowerCase();
   const broadGroupFilter = selectedBroadMuscleGroup;
+  
+
+  
+
 
   return dummyExercises.filter((ex) => {
         const nameMatch = ex.name.toLowerCase().includes(query);
@@ -75,6 +89,8 @@ export default function SelectExerciseScreen({ navigation }) {
     }, [searchQuery, selectedBroadMuscleGroup]);
 
   const sections = useMemo(() => groupByPrimaryMuscle(filteredExercises), [filteredExercises]);
+
+
 
   function AnimatedChip({ label, selected, onPress }) {
     const animatedStyle = useAnimatedStyle(() => ({
@@ -142,7 +158,8 @@ export default function SelectExerciseScreen({ navigation }) {
         sections={sections}
         keyExtractor={(item) => item.id}
         stickySectionHeadersEnabled={false}
-        
+        ref={listRef}
+
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.exerciseCard}

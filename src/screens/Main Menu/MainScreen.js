@@ -1,5 +1,5 @@
 import React, { useEffect, useState , useCallback} from 'react';
-import { View, FlatList, Text, SafeAreaView } from 'react-native';
+import { View, FlatList, Text, SafeAreaView, Image } from 'react-native';
 import { getGlobalFeed } from './FeedService';
 import FeedCard from './FeedCard';
 import { useTheme } from '../ThemeProvider';
@@ -46,33 +46,54 @@ export default function HomeScreen({ navigation }) {
       backgroundColor: isDark ? '#000' : '#f5f5f5'
     }}>
       
-      {/* 🔥 HEADER */}
-      <View style={{
-        paddingHorizontal: 16,
-        paddingTop: 10,
-        paddingBottom: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: isDark ? '#1a1a1a' : '#e6e6e6',
-      }}>
-        <Text style={{
-          fontSize: 28,
-          fontWeight: '800',
-          color: isDark ? '#fff' : '#000',
-          letterSpacing: 2,
-        }}>
-          IRON
-        </Text>
+      <View
+        style={{
+          paddingHorizontal: 16,
+          paddingTop: 10,
+          paddingBottom: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: isDark ? '#1a1a1a' : '#e6e6e6',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <View>
+          <Text
+            style={{
+              fontSize: 28,
+              fontWeight: '800',
+              color: isDark ? '#fff' : '#000',
+              letterSpacing: 2,
+            }}
+          >
+            IRON
+          </Text>
 
-        <Text style={{
-          fontSize: 12,
-          marginTop: 2,
-          color: isDark ? '#888' : '#666'
-        }}>
-          Global Training Feed
-        </Text>
+          <Text
+            style={{
+              fontSize: 12,
+              marginTop: 2,
+              color: isDark ? '#888' : '#666',
+            }}
+          >
+            Global Training Feed
+          </Text>
+        </View>
+
+        <Image
+          source={
+            isDark
+              ? require('../../../assets/logo-dark.png')
+              : require('../../../assets/logo-light.png')
+          }
+          resizeMode="contain"
+          style={{
+            width: 40,
+            height: 40,
+          }}
+        />
       </View>
-
-      {/* 🔥 FEED */}
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
