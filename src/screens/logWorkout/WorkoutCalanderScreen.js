@@ -26,6 +26,7 @@ export default function WorkoutCalendarScreen() {
       <Text style={styles.title}>Choose a Day</Text>
 
       <Calendar
+        key={isDark ? 'dark' : 'light'}
         current={today}
         onDayPress={(day) => setSelectedDate(day.dateString)}
         markedDates={{
@@ -35,6 +36,7 @@ export default function WorkoutCalendarScreen() {
           },
         }}
         theme={{
+          
           backgroundColor: isDark ? '#000' : '#fff',
           calendarBackground: isDark ? '#000' : '#fff',
           dayTextColor: isDark ? '#fff' : '#000',

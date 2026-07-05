@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from '../screens/ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
 
-import MainScreen from '../screens/MainScreen';
+import MainScreen from '../screens/Main Menu/MainScreen';
 import ProfileStackNavigator from './ProfileStackNavigator';
 import LogWorkoutStackNavigator from './LogWorkoutStackNavigator';
 

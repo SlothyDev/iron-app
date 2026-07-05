@@ -33,6 +33,8 @@ export default function ConfirmWorkoutScreen({navigation}) {
   
   const [workoutDate, setWorkoutDate] = useState(new Date()); // temporary default
   const date = route.params?.date ;
+
+  const [isPublic, setIsPublic] = useState(true);
   useEffect(() => {
     const dateFromRoute = route.params?.date;
     if (dateFromRoute) {
@@ -83,18 +85,29 @@ export default function ConfirmWorkoutScreen({navigation}) {
         return;
       }
 
-
       const workoutToSave = {
         ...workout,
-        title: title.trim(),
-        comments: comments.trim(),
-        date: workoutDate, 
+
+        userId: user.uid,
+
+        title: title.trim() || "Untitled Workout",
+        comments: comments.trim() || "",
+
+        isPublic,
+
+        workoutDate: Timestamp.fromDate(workoutDate),
+
+        likeCount: workout.likeCount ?? 0,
+        commentCount: workout.commentCount ?? 0,
       };
 
       await saveWorkout(user.uid, workoutToSave);
+
       Alert.alert('Success', 'Workout saved successfully');
+
       useWorkoutStore.getState().endSession();
-      navigation.navigate("WorkoutCalander"); 
+      navigation.navigate("WorkoutCalander");
+
     } catch (error) {
       Alert.alert('Error', 'Failed to save workout');
       console.error(error);
@@ -123,8 +136,72 @@ export default function ConfirmWorkoutScreen({navigation}) {
   };
 
 
+  const WorkoutSummaryCard = ({ stats, groupTotals, highlightedMuscles, workout }) => {
+      return (
+        <View style={styles.card}>
+          
+          <Text style={styles.cardTitle}>Workout Summary</Text>
+
+          {/* Stats row */}
+          <View style={styles.statsRow}>
+            <Text style={styles.stat}>🔥 {stats.totalVolume*1000} {units === 'metric' ? 'kgs' : 'lbs'}</Text>
+            <Text style={styles.stat}>⏱ {stats.totalTime} </Text>
+            <Text style={styles.stat}>🏋️ {stats.totalSets} sets</Text>
+          </View>
+
+          {/* Muscle maps */}
+          <View style={styles.diagramRow}>
+          <View style={styles.mapWrapper}>
+            <MuscleMap
+              primary={highlightedMuscles.primary}
+              secondary={highlightedMuscles.secondary}
+            />
+          </View>
+
+          <View style={styles.mapWrapper}>
+            <MuscleBackMap
+              primary={highlightedMuscles.primary}
+              secondary={highlightedMuscles.secondary}
+            />
+          </View>
+        </View>
+
+          {/* Radar */}
+          <RadarChart
+            size={180}
+            levels={5}
+            labels={['Chest', 'Back', 'Legs', 'Arms', 'Shoulders']}
+            data={[
+              groupTotals['chest'],
+              groupTotals['back'],
+              groupTotals['legs'],
+              groupTotals['arms'],
+              groupTotals['shoulders']
+            ]}
+            maxValue={1}
+          />
+
+          {/* Exercise preview */}
+          <View style={styles.exercisePreview}>
+            {workout.exercises.slice(0, 3).map((ex, i) => (
+              <Text key={i} style={styles.exerciseText}>
+                • {ex.name} ({ex.sets.length} sets)
+              </Text>
+            ))}
+
+            {workout.exercises.length > 3 && (
+              <Text style={styles.moreText}>
+                +{workout.exercises.length - 3} more
+              </Text>
+            )}
+          </View>
+
+        </View>
+      );
+    };
+
   return (
-    <ScrollView contentContainerStyle={[styles.container, ]}>
+    <ScrollView style={{ backgroundColor: isDark ? '#000' : '#fff' }} contentContainerStyle={[styles.container, ]}>
       <TextInput
         style={styles.input}
         value={title}
@@ -162,36 +239,49 @@ export default function ConfirmWorkoutScreen({navigation}) {
         />
       )}
 
-
-      <View style={styles.containerDiagram}>
+      {/*<View style={styles.containerDiagram}>
         <MuscleMap primary={highlightedMuscles.primary} secondary={highlightedMuscles.secondary} />
         <MuscleBackMap primary={highlightedMuscles.primary} secondary={highlightedMuscles.secondary} />
-      </View>
-
-      <View style={styles.instructionsContainer}>
-        <Text style={[styles.label]}>Summary</Text>
-        <Text style={[styles.instructionText]}>Total Volume: {stats.totalVolume >= 1 ? stats.totalVolume : stats.totalVolume*1000}{stats.totalVolume >= 1 ? 'K ' : ''}{units === 'metric' ? 'kgs' : 'lbs'}</Text>
-        <Text style={[styles.instructionText]}>Total Time: {stats.totalTime} mins</Text>
-        <Text style={[styles.instructionText]}>Exercises: {stats.exerciseCount}</Text>
-        <Text style={[styles.instructionText]}>Sets: {stats.totalSets}</Text>
-      </View>
-      <RadarChart
-        size={200}
-        levels={5}
-        labels={['Chest', 'Back', 'Legs', 'Arms', 'Shoulders']}
-        data={[groupTotals['chest'], groupTotals['back'], groupTotals['legs'], groupTotals['arms'], groupTotals['shoulders']]} 
-        maxValue={1}
+      </View>*/}
+      
+      
+      <WorkoutSummaryCard
+        stats={stats}
+        groupTotals={groupTotals}
+        highlightedMuscles={highlightedMuscles}
+        workout={workout}
       />
-      <View style={styles.muscleGroupContainer}>
-        <Text style={[styles.label]}>Exercises</Text>
-        {workout.exercises.map((ex, i) => (
-          <View key={i} style={styles.setRow}>
-            <Text style={styles.header}>{ex.name}</Text>
-            <Text style={styles.subtext}>
-              {ex.sets.length} sets — {ex.sets.reduce((a, s) => a + (s.reps || s.time || 0), 0)} total reps/time
-            </Text>
-          </View>
-        ))}
+
+      <View style={styles.segmentContainer}>
+        <TouchableOpacity
+          style={[
+            styles.segmentButton,
+            isPublic && styles.segmentActive
+          ]}
+          onPress={() => setIsPublic(true)}
+        >
+          <Text style={[
+            styles.segmentText,
+            isPublic && styles.segmentTextActive
+          ]}>
+            Public 🌍
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.segmentButton,
+            !isPublic && styles.segmentActive
+          ]}
+          onPress={() => setIsPublic(false)}
+        >
+          <Text style={[
+            styles.segmentText,
+            !isPublic && styles.segmentTextActive
+          ]}>
+            Private 🔒
+          </Text>
+        </TouchableOpacity>
       </View>
 
 
@@ -216,6 +306,7 @@ const getStyles = (isDark) =>
       alignItems: 'center',
       backgroundColor: isDark ? '#000' : '#fff' 
     },
+    
     input: {
       backgroundColor: isDark ? '#222' : '#fff',
       borderRadius: 10,
@@ -255,25 +346,6 @@ const getStyles = (isDark) =>
       color: isDark ? '#fefefeff' : '#000000ff',
       fontWeight: '400',
     },
-    muscleGroupContainer: {
-      backgroundColor: isDark ? '#000000ff': '#f2f2f2ff',
-      borderRadius: 16,
-      padding: 16,
-      marginVertical: 12,
-      shadowColor: isDark ? '#000' : '#ccc',
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      shadowOffset: { width: 0, height: 4 },
-      elevation: 3,
-      width: '100%',
-      alignItems: 'center',
-    },
-    label: {
-      fontSize: 18,
-      fontWeight: '600',
-      marginBottom: 8,
-      color: isDark ? '#fefefeff' : '#000000ff'
-    },
     header: {
       fontSize: 14,
       color: isDark ? '#fefefeff' : '#000000ff',
@@ -295,9 +367,36 @@ const getStyles = (isDark) =>
       marginTop: 20,
       alignItems: 'center',
     },
+    segmentContainer: {
+      flexDirection: 'row',
+      width: '80%',
+      borderRadius: 12,
+      overflow: 'hidden',
+      marginTop: 10,
+      borderWidth: 1,
+      borderColor: '#333',
+    },
+    segmentButton: {
+      flex: 1,
+      paddingVertical: 10,
+      alignItems: 'center',
+      backgroundColor: isDark ? '#000000ff' : '#fefefeff',
+    },
 
+    segmentActive: {
+      backgroundColor: '#006eff',
+    },
+
+    segmentText: {
+      color: isDark ?  '#fefefeff' : '#000000ff',
+      fontWeight: '600',
+    },
+
+    segmentTextActive: {
+      color: '#fefefeff',
+    },
     finishButton: {
-      backgroundColor: '#26ff00',
+      backgroundColor: '#54bb00',
       paddingVertical: 14,
       borderRadius: 10,
       alignItems: 'center',
@@ -306,7 +405,7 @@ const getStyles = (isDark) =>
     },
 
     finishButtonText: {
-      color: '#fff',
+      color: '#fefefeff',
       fontSize: 18,
       fontWeight: '700',
     },
@@ -324,4 +423,58 @@ const getStyles = (isDark) =>
       fontSize: 16,
       fontWeight: '700',
     },
+    card: {
+      width: '100%',
+      backgroundColor: isDark ?  '#111' : '#ffffff',
+      borderRadius: 16,
+      padding: 16,
+      marginVertical: 12,
+      borderWidth: 1,
+      borderColor: '#222',
+    },
+
+    cardTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: isDark ?  '#fff' : '#000',
+      marginBottom: 12,
+    },
+
+    statsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+
+    stat: {
+      color: isDark ?  '#aaa' : '#000',
+      fontSize: 12,
+    },
+
+    diagramRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: '100%',
+    },
+    mapWrapper: {
+      flex: 1,
+      alignItems: 'center',
+    },
+
+    exercisePreview: {
+      marginTop: 10,
+    },
+
+    exerciseText: {
+      color: '#ddd',
+      fontSize: 13,
+      marginBottom: 4,
+    },
+
+    moreText: {
+      color: '#888',
+      fontSize: 12,
+      marginTop: 4,
+    }
   });

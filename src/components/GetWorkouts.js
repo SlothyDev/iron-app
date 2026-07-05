@@ -14,9 +14,9 @@ export async function getWorkoutsByDateRange(startDate, endDate) {
 
   const q = query(
     workoutsRef,
-    where('date', '>=', startTS),
-    where('date', '<=', endTS),
-    orderBy('date', 'desc')
+    where('workoutDate', '>=', startTS),
+    where('workoutDate', '<=', endTS),
+    orderBy('workoutDate', 'desc')
   );
 
   const snapshot = await getDocs(q);

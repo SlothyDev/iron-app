@@ -40,7 +40,6 @@ export function calculateWorkoutStats(workout) {
 export function calculateMuscleHighlights(workout) {
   const primary = new Set();
   const secondary = new Set();
-    console.log(workout.exercises);
   workout.exercises.forEach(exercise => {
     (exercise.primary || []).forEach(muscle => primary.add(muscle));
     (exercise.secondary || []).forEach(muscle => {
@@ -72,7 +71,7 @@ export function calculateRadarData(workout) {
       const weight = !isNaN(parseFloat(s.weight)) ? parseFloat(s.weight) : 0;
       return acc + (exercise.type === 'reps' ? weight * (s.reps || 0) : 0);
     }, 0);
-
+    
     // Add full volume for all primary muscles
     (exercise.primary || []).forEach(muscle => {
       const group = mapMuscleToGroup([muscle]);

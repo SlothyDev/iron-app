@@ -87,12 +87,12 @@ export default function ProfileScreen({ navigation, settings }) {
       headerRight: () => (
         <TouchableOpacity
           onPress={() => navigation.navigate('EditProfile')}
-          style={{ marginRight: 16 }}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <IconButton
             icon="pencil"
             size={24}
+            style={{ margin: 0 }}
             onPress={() => navigation.navigate("EditProfile")}
           />
         </TouchableOpacity>

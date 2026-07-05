@@ -16,7 +16,6 @@ export function WeeklyWorkouts( { navigation } ) {
     setLoading(true);
     const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
     const results = await getWorkoutsByDateRange(weekStart, weekEnd);
-    console.log(results)
 
     setWorkouts(results);
     setLoading(false);
@@ -58,9 +57,9 @@ export function WeeklyWorkouts( { navigation } ) {
     >
         <TouchableOpacity onPress={() => navigation.navigate('WorkoutDetail', { workoutId: workout.id })}>
         <Text style={{ fontWeight: 'bold', fontSize: 16, color: isDark ? '#fff' : '#000' }}>
-            {format(workout.date?.toDate ? workout.date.toDate() : new Date(workout.date), 'EEE, MMM d')}
+            {format(workout.workoutDate?.toDate ? workout.workoutDate.toDate() : new Date(workout.workoutDate), 'EEE, MMM d')}
         </Text>
-        <Text style={{ color: isDark ? '#fff' : '#000' }}>{workout.name || 'Workout'}</Text>
+        <Text style={{ color: isDark ? '#fff' : '#000' }}>{workout.title || 'Workout'}</Text>
         {workout.exercises && (
             <Text style={{ color: isDark ? '#fff' : '#000', fontSize: 12 }}>
             {workout.exercises.length} exercises
