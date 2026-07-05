@@ -26,7 +26,7 @@ import {
 } from 'firebase/auth';
 
 import { auth, db, } from '../../firebase/firebase';
-import { doc, setDoc, getDocs, collection, query, where  } from 'firebase/firestore';
+import { doc, setDoc, getDoc, getDocs, collection, query, where  } from 'firebase/firestore';
 
 
 export default function SignUpScreen({ navigation }) {
@@ -45,13 +45,15 @@ export default function SignUpScreen({ navigation }) {
 
   const isUsernameAvailable = async (username) => {
     try {
-    const q = query(collection(db, 'users'), where('username', '==', username.trim().toLowerCase()));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.empty;
-  } catch (error) {
-    console.error("Error checking username availability:", error);
-    throw error;
-  }
+      const usernameRef = doc(db, 'usernames', username.trim().toLowerCase());
+      const usernameSnap = await getDoc(usernameRef);
+
+      return !usernameSnap.exists();
+    } catch (error) {
+      console.error("Error checking username availability:", error);
+      Alert.alert("Error!", error.message);
+      throw error;
+    }
   };
 
   const handleSignUp = async () => {
@@ -89,6 +91,10 @@ export default function SignUpScreen({ navigation }) {
         console.log("Verification email sent");
       }).catch(e => console.error("Verification failed", e));      console.log(username, email)
 
+      await setDoc(doc(db, "usernames", username.trim().toLowerCase()), {
+        uid: user.uid,
+      });
+      
       await setDoc(doc(db, 'users', user.uid), {
         name: '',
         username: username.trim().toLowerCase(),
@@ -99,6 +105,7 @@ export default function SignUpScreen({ navigation }) {
         prs: {},
         profileComplete: false 
       });
+
       console.log("User signed up and doc ref made.");
       Alert.alert('Welcome!', `Hi ${username}, a verification email has been sent to ${email}. Please verify to continue.`);
       await auth.signOut()
