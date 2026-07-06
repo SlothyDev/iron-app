@@ -1,6 +1,9 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const useWorkoutStore = create((set, get) => ({
+const useWorkoutStore = create(
+  persist((set, get) => ({
   isRunning: false,
   startTime: null,
   elapsed: 0,
@@ -9,17 +12,44 @@ const useWorkoutStore = create((set, get) => ({
 
   startSession: () => {
     const now = Date.now();
-    const intervalId = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - get().startTime) / 1000);
-      set({ elapsed });
-    }, 1000);
 
     set({
       isRunning: true,
       startTime: now,
       elapsed: 0,
-      exercises: [],
-      intervalId,
+    });
+  },
+
+
+  startTimer: () => {
+    const { startTime, intervalId: existingInterval } = get();
+
+    if (!startTime || existingInterval) return;
+
+    const updateTimer = () => {
+      set({
+        elapsed: Math.floor(
+          (Date.now() - startTime) / 1000
+        ),
+      });
+    };
+
+    updateTimer();
+
+    const newIntervalId = setInterval(updateTimer, 1000);
+
+    set({ intervalId: newIntervalId });
+  },
+
+  stopTimer: () => {
+    const { intervalId } = get();
+
+    if (intervalId) {
+      clearInterval(intervalId);
+    }
+
+    set({
+      intervalId: null,
     });
   },
 
@@ -41,8 +71,7 @@ const useWorkoutStore = create((set, get) => ({
     })),  
 
   endSession: () => {
-    const { intervalId } = get();
-    if (intervalId) clearInterval(intervalId);
+    get().stopTimer();
 
     set({
       isRunning: false,
@@ -63,6 +92,19 @@ const useWorkoutStore = create((set, get) => ({
       intervalId: null,
     });
   }
-}));
+}),
+{
+  name: 'workout-session',
+  storage: createJSONStorage(() => AsyncStorage),
+
+  partialize: (state) => ({
+    isRunning: state.isRunning,
+    startTime: state.startTime,
+    elapsed: state.elapsed,
+    exercises: state.exercises,
+  }),
+}
+)
+);
 
 export default useWorkoutStore;

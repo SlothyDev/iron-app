@@ -23,17 +23,35 @@ export default function WorkoutSessionScreen() {
   const route = useRoute();
 
   const workoutDate = route.params?.date || dayjs().format('YYYY-MM-DD');
-  const { exercises, deleteExercise} = useWorkoutStore();
-  const clearSession = useWorkoutStore((s) => s.endSession);
   const { units } = useSettings();
-  const { isRunning, elapsed, startSession, endSession } = useWorkoutStore();
+
+  const exercises = useWorkoutStore((s) => s.exercises);
+  const deleteExercise = useWorkoutStore((s) => s.deleteExercise);
+
+  const isRunning = useWorkoutStore((s) => s.isRunning);
+  const elapsed = useWorkoutStore((s) => s.elapsed);
+
+  const startSession = useWorkoutStore((s) => s.startSession);
+  const startTimer = useWorkoutStore((s) => s.startTimer);
+  const stopTimer = useWorkoutStore((s) => s.stopTimer);
 
 
   useEffect(() => {
-    if (!isRunning) startSession();
-    return () => endSession(); 
-  }, []);
+    const state = useWorkoutStore.getState();
 
+    if (!state.isRunning) {
+      state.startSession();
+    }
+
+    // start timer after session exists
+    setTimeout(() => {
+      useWorkoutStore.getState().startTimer();
+    }, 100);
+
+    return () => {
+      stopTimer();
+    };
+  }, []);
   
 
   const formatTime = (seconds) => {
@@ -41,9 +59,11 @@ export default function WorkoutSessionScreen() {
     const s = (seconds % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
   };
+
   const handleAddExercise = () => {
     navigation.navigate('SelectExercise', {
       onComplete: (newExercise) => {
+        console.log("WTF")
         setExercises((prev) => [...prev, newExercise]);
       },
     });
@@ -55,10 +75,13 @@ export default function WorkoutSessionScreen() {
     navigation.navigate('ConfirmWorkout', { date: workoutDate });
   };
 
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Workout - {workoutDate}</Text>
-      <Text style={styles.timer}>{formatTime(elapsed)}</Text>
+      <Text style={styles.timer}>
+        {formatTime(elapsed)}
+      </Text>
 
       <SwipeListView
         data={exercises}

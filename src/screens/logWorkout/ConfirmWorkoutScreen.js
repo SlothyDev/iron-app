@@ -127,7 +127,7 @@ export default function ConfirmWorkoutScreen({navigation}) {
           style: 'destructive',
           onPress: () => {
             useWorkoutStore.getState().endSession();
-            navigation.popToTop(); 
+            navigation.navigate('WorkoutCalander');
           },
         },
       ]

@@ -1,8 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, FlatList, Text, SafeAreaView, Image } from 'react-native';
+import { View, FlatList, Text, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import FeedCard from './FeedCard';
 import { useTheme } from '../ThemeProvider';
 import { toggleLike, isPostLiked } from '../../components/PostInteractions';
+import ResumeWorkoutModal from '../../components/ResumeWorkoutModal';
+import useWorkoutStore from '../../store/useWorkoutStore';
 
 import { auth, db } from '../../firebase/firebase';
 
@@ -34,6 +37,33 @@ export default function HomeScreen({ navigation }) {
 
     return unsub;
   }, []);
+
+  const isRunning = useWorkoutStore((s)=>s.isRunning);
+  const elapsed = useWorkoutStore((s)=>s.elapsed);
+  const exercises = useWorkoutStore((s)=>s.exercises);
+  const endSession = useWorkoutStore((s)=>s.endSession);
+
+  const hydrated = useWorkoutStore.persist.hasHydrated();
+
+  const [ready, setReady] = useState(hydrated);
+
+  useEffect(() => {
+    const unsub = useWorkoutStore.persist.onFinishHydration(() => {
+      setReady(true);
+    });
+
+    return unsub;
+  }, []);
+
+  const [showResume, setShowResume] = useState(false);
+
+  useEffect(() => {
+    if (ready && isRunning) {
+      setShowResume(true);
+    }
+  }, [ready, isRunning]);
+
+  
 
   const loadLikes = async (data) => {
     const results = await Promise.all(
@@ -120,6 +150,29 @@ export default function HomeScreen({ navigation }) {
       flex: 1,
       backgroundColor: isDark ? '#000' : '#f5f5f5'
     }}>
+
+      {/* RESUME WORKOUT POPUP */}
+
+      <ResumeWorkoutModal
+        visible={showResume}
+
+        elapsed={elapsed}
+
+        exerciseCount={exercises.length}
+
+        onResume={() => {
+          setShowResume(false);
+
+          navigation.navigate('LogWorkout', {
+            screen: 'WorkoutSession',
+          });
+        }}
+
+        onDiscard={()=>{
+          endSession();
+          setShowResume(false);
+        }}
+      />
       
       {/* HEADER */}
       <View style={{
