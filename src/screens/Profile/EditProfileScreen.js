@@ -42,6 +42,7 @@ export default function ProfileEditScreen({ navigation }) {
   const [heightCm, setHeightCm] = useState('');
   const [heightFt, setHeightFt] = useState('');
   const [heightIn, setHeightIn] = useState('');
+  const [weight, setWeight] = useState('');
   const [goals, setGoals] = useState('');
   const [gymExperience, setGymExperience] = useState('Beginner');
   const [benchPress, setBenchPress] = useState('');
@@ -64,6 +65,7 @@ export default function ProfileEditScreen({ navigation }) {
           const d = snap.data();
           setName(d.name||''); setBio(d.bio||''); setGender(d.gender||'');
           setAge(d.age?String(d.age): '');
+          setWeight(d.weight?String(d.weight): '');
           if (units==='metric') setHeightCm(d.height?String(d.height*2.54): '');
           else {
             const inches = d.height||0;
@@ -157,6 +159,7 @@ export default function ProfileEditScreen({ navigation }) {
     const body = { name:name.trim(), bio, gender, age:Number(age), height:h,
       goals, profilePicUrl:picUrl, gymExperience,
       prs:{ benchPress:Number(toLbs(benchPress))||0, squat:Number(toLbs(squat))||0, deadlift:Number(toLbs(deadlift))||0 },
+      weight:Number(weight),
       updatedAt:serverTimestamp(), profileComplete:true };
     try { await setDoc(doc(db,'users',user.uid),body,{merge:true}); navigation.goBack(); }
     catch(e){Alert.alert('Error',e.message);} finally{setSaving(false);}
@@ -181,6 +184,8 @@ export default function ProfileEditScreen({ navigation }) {
         <GenderPicker gender={gender} setGender={setGender} isDark={isDark}/>
         <TextInput style={styles.input} placeholder="Age" keyboardType="numeric"
           placeholderTextColor={isDark?'#888':'#aaa'} value={age} onChangeText={setAge}/>
+        <TextInput style={styles.input} placeholder="Weight (optional)" keyboardType="numeric"
+          placeholderTextColor={isDark?'#888':'#aaa'} value={weight} onChangeText={setWeight}/>
 
         {/* unit toggle */}
         <View style={styles.unitToggle}>

@@ -47,9 +47,11 @@ export default function ConfirmWorkoutScreen({navigation}) {
 
 
   useEffect(() => {
-    
-    const { exercises, elapsed } = useWorkoutStore.getState();
-    setWorkout({ exercises, elapsed });
+  const state = useWorkoutStore.getState();
+
+  const { exercises, elapsed } = state;
+
+  setWorkout({ exercises, elapsed });
   }, []);
 
   
@@ -87,12 +89,10 @@ export default function ConfirmWorkoutScreen({navigation}) {
 
       const workoutToSave = {
         ...workout,
-
         userId: user.uid,
 
         title: title.trim() || "Untitled Workout",
         comments: comments.trim() || "",
-
         isPublic,
 
         workoutDate: Timestamp.fromDate(workoutDate),
@@ -100,7 +100,6 @@ export default function ConfirmWorkoutScreen({navigation}) {
         likeCount: workout.likeCount ?? 0,
         commentCount: workout.commentCount ?? 0,
       };
-
       await saveWorkout(user.uid, workoutToSave);
 
       Alert.alert('Success', 'Workout saved successfully');

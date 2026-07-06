@@ -7,100 +7,114 @@ import {
   StyleSheet,
   SectionList,
   FlatList,
-
 } from 'react-native';
 import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useTheme } from '../ThemeProvider';
 import { Ionicons } from '@expo/vector-icons';
+
 const dummyExercises = require('../../../data/exercises_detailed.json');
 
 const broadMuscleGroups = {
-  Chest: ['pectoralis major', 'Pectoralis minor', 'sternocostal part', 'clavicular part'],
+  Chest: ['pectoralis major', 'pectoralis minor', 'sternocostal part', 'clavicular part'],
   Back: ['latissimus dorsi', 'trapezius', 'rhomboids', 'erector spinae'],
-  Legs: ['Vastus lateralis', 'Rectus femoris', 'Vastus intermedius', 'Gastrocnemius', 'Soleus'],
-  Shoulders: ['Anterior deltoid', 'Lateral deltoid', 'Posterior deltoid'],
-  Arms: ['Biceps brachii long head', 'Biceps brachii short head', 'Triceps brachii long head', 'Triceps brachii lateral head', 'Triceps brachii medial head', 'brachialis',],
+  Legs: ['vastus lateralis', 'rectus femoris', 'vastus intermedius', 'gastrocnemius', 'soleus'],
+  Shoulders: ['anterior deltoid', 'lateral deltoid', 'posterior deltoid'],
+  Arms: ['biceps brachii long head', 'biceps brachii short head', 'triceps brachii long head', 'triceps brachii lateral head', 'triceps brachii medial head', 'brachialis'],
   Core: ['rectus abdominis', 'obliques', 'transverse abdominis', 'erector spinae'],
 };
 
-function isExerciseInBroadGroup(exercise, broadGroup) {
-  if (!broadGroup) return true;
-  const musclesInGroup = broadMuscleGroups[broadGroup].map((m) => m.toLowerCase());
-  return Array.isArray(exercise.primaryMuscles) && exercise.primaryMuscles.some((m) =>
-    musclesInGroup.includes(m.toLowerCase())
-  );
-}
+const normalize = (t) =>
+  (t ?? '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
 
+function isExerciseInBroadGroup(exercise, group) {
+  if (!group) return true;
+  const set = new Set(broadMuscleGroups[group]?.map(m => m.toLowerCase()) || []);
+  return (exercise.primaryMuscles || []).some(m => set.has(m.toLowerCase()));
+}
 
 function groupByPrimaryMuscle(exercises) {
-  const groups = {};
+  const map = new Map();
 
-  exercises.forEach((ex) => {
-    const group = Array.isArray(ex.primaryMuscles) && ex.primaryMuscles.length > 0
-      ? ex.primaryMuscles[0]
-      : 'Other';
-    if (!groups[group]) groups[group] = [];
-    groups[group].push(ex);
-  });
+  for (const ex of exercises) {
+    const key = ex.primaryMuscles?.[0] || 'Other';
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(ex);
+  }
 
-  return Object.keys(groups)
-    .sort()
-    .map((group) => ({
-      title: group,
-      data: groups[group],
-    }));
+  return Array.from(map.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([title, data]) => ({ title, data }));
 }
 
-const uniqueTypes = [...new Set(dummyExercises.map((ex) => ex.type || 'Other'))].sort();
+function highlightMatch(text, query) {
+  if (!query) return [{ text, match: false }];
+  const parts = text.split(new RegExp(`(${query})`, 'ig'));
+  return parts.map(p => ({
+    text: p,
+    match: p.toLowerCase() === query.toLowerCase(),
+  }));
+}
 
 export default function SelectExerciseScreen({ navigation }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedBroadMuscleGroup, setSelectedBroadMuscleGroup] = useState(null);
+  const [selectedGroup, setSelectedGroup] = useState(null);
 
   const listRef = useRef(null);
 
-  useEffect(() => {
-    listRef.current?.scrollToLocation({
-      sectionIndex: 0,
-      itemIndex: 0,
-      animated: false,
-    });
-  }, [searchQuery, selectedBroadMuscleGroup]);
+  const query = useMemo(() => normalize(searchQuery), [searchQuery]);
 
   const styles = getStyles(isDark);
 
-  const filteredExercises = useMemo(() => {
-  const query = searchQuery.toLowerCase();
-  const broadGroupFilter = selectedBroadMuscleGroup;
-  
+  const filtered = useMemo(() => {
+    const q = query;
 
-  
+    if (!q && !selectedGroup) return dummyExercises;
 
+    return dummyExercises.filter(ex => {
+      const name = normalize(ex.name);
 
-  return dummyExercises.filter((ex) => {
-        const nameMatch = ex.name.toLowerCase().includes(query);
-        const muscleMatch = isExerciseInBroadGroup(ex, broadGroupFilter);
+      const matchText = name.includes(q);
+      const matchGroup = isExerciseInBroadGroup(ex, selectedGroup);
 
-        return nameMatch && muscleMatch;
-      }).sort((a, b) => a.name.localeCompare(b.name));
-    }, [searchQuery, selectedBroadMuscleGroup]);
+      return matchText && matchGroup;
+    });
+  }, [query, selectedGroup]);
 
-  const sections = useMemo(() => groupByPrimaryMuscle(filteredExercises), [filteredExercises]);
+  const sections = useMemo(() => {
+    if (!filtered.length) return [];
+    return groupByPrimaryMuscle(filtered);
+  }, [filtered]);
 
+  // SAFE SCROLL (prevents "item length 0" crash)
+  useEffect(() => {
+    if (!sections.length) return;
 
+    requestAnimationFrame(() => {
+      listRef.current?.scrollToLocation({
+        sectionIndex: 0,
+        itemIndex: 0,
+        animated: false,
+      });
+    });
+  }, [sections.length]);
 
   function AnimatedChip({ label, selected, onPress }) {
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: withSpring(selected ? 1.1 : 1) }],
+    const style = useAnimatedStyle(() => ({
+      transform: [{ scale: withSpring(selected ? 1.08 : 1) }],
     }));
 
     return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-        <Animated.View style={[styles.chip, selected && styles.chipSelected, animatedStyle]}>
-          <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
+      <TouchableOpacity onPress={onPress}>
+        <Animated.View style={[styles.chip, selected && styles.chipSelected, style]}>
+          <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+            {label}
+          </Text>
         </Animated.View>
       </TouchableOpacity>
     );
@@ -108,73 +122,72 @@ export default function SelectExerciseScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Select an Exercise</Text>
+      <Text style={styles.title}>Select Exercise</Text>
 
       <View style={styles.searchWrapper}>
         <Ionicons name="search" size={18} color={isDark ? '#aaa' : '#666'} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search exercise..."
-          placeholderTextColor={isDark ? '#888' : '#aaa'}
           value={searchQuery}
           onChangeText={setSearchQuery}
-          clearButtonMode="while-editing"
+          placeholder="Search..."
+          placeholderTextColor={isDark ? '#888' : '#aaa'}
           autoCorrect={false}
           autoCapitalize="none"
         />
       </View>
 
-      <View style={styles.filterHeader}>
-        <Text style={styles.filterLabel}>Muscle Group</Text>
-        {(selectedBroadMuscleGroup) && (
-          <TouchableOpacity
-            onPress={() => {
-              setSelectedBroadMuscleGroup(null);
-            }}
-          >
-            <Text style={styles.clearFilters}>Clear Filters</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
       <FlatList
         data={Object.keys(broadMuscleGroups)}
-        keyExtractor={(item) => item}
         horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipScroll}
+        keyExtractor={(i) => i}
         renderItem={({ item }) => (
           <AnimatedChip
             label={item}
-            selected={selectedBroadMuscleGroup === item}
+            selected={selectedGroup === item}
             onPress={() =>
-              setSelectedBroadMuscleGroup(selectedBroadMuscleGroup === item ? null : item)
+              setSelectedGroup(selectedGroup === item ? null : item)
             }
           />
         )}
       />
 
       <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        stickySectionHeadersEnabled={false}
         ref={listRef}
+        sections={sections}
+        keyExtractor={(item, index) => item.id ?? index.toString()}
+        renderItem={({ item }) => {
+          const parts = highlightMatch(item.name, query);
 
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.exerciseCard}
-            onPress={() =>
-              navigation.navigate('ExerciseDetails', {
-                exercise: item,
-                onComplete: navigation.getState().routes.find(r => r.name === 'WorkoutSession')?.params?.onComplete,
-              })
-            }
-          >
-            <Text style={styles.exerciseText}>{item.name}</Text>
-            <Text style={styles.exerciseSub}>{item.type}</Text>
-          </TouchableOpacity>
-        )}
-        contentContainerStyle={{ paddingBottom: 100 }}
+          return (
+            <TouchableOpacity
+              style={styles.exerciseCard}
+              onPress={() =>
+                navigation.navigate('ExerciseDetails', {
+                  exercise: item,
+                  onComplete:
+                    navigation.getState().routes.find(r => r.name === 'WorkoutSession')
+                      ?.params?.onComplete,
+                })
+              }
+            >
+              <Text style={styles.exerciseText}>
+                {parts.map((p, i) => (
+                  <Text
+                    key={i}
+                    style={p.match ? { color: '#007aff', fontWeight: '800' } : null}
+                  >
+                    {p.text}
+                  </Text>
+                ))}
+              </Text>
+
+              <Text style={styles.exerciseSub}>{item.type}</Text>
+            </TouchableOpacity>
+          );
+        }}
+        contentContainerStyle={{ paddingBottom: 120 }}
+        keyboardShouldPersistTaps="handled"
       />
     </View>
   );

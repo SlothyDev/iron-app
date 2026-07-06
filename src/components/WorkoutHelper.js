@@ -1,4 +1,4 @@
-function formatSecondsToTime(totalSeconds) {
+export function formatSecondsToTime(totalSeconds) {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
@@ -11,6 +11,17 @@ function formatSecondsToTime(totalSeconds) {
   return `${paddedHours}:${paddedMinutes}:${paddedSeconds}`;
 }
 
+export function formatWorkoutTime(totalSeconds) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
 
 export function calculateWorkoutStats(workout) {
   let totalVolume = 0;
@@ -26,13 +37,13 @@ export function calculateWorkoutStats(workout) {
       totalSets += 1;
     });
   });
-
   return {
     totalVolume: Math.round(totalVolume)/1000,
     totalTime: formatSecondsToTime(Math.round(workout.elapsed)),
     exerciseCount: workout.exercises.length,
     totalSets
   };
+  
 }
 
 

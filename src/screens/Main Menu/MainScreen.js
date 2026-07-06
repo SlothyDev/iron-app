@@ -1,31 +1,106 @@
-import React, { useEffect, useState , useCallback} from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, FlatList, Text, SafeAreaView, Image } from 'react-native';
-import { getGlobalFeed } from './FeedService';
 import FeedCard from './FeedCard';
 import { useTheme } from '../ThemeProvider';
-import { useFocusEffect } from '@react-navigation/native';
+import { toggleLike, isPostLiked } from '../../components/PostInteractions';
+
+import { auth, db } from '../../firebase/firebase';
+
+import { onAuthStateChanged } from 'firebase/auth';
+
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+
+} from 'firebase/firestore';
 
 export default function HomeScreen({ navigation }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
+  const likeCache = useRef({});
+
   const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [likedPosts, setLikedPosts] = useState({});
+  const [initializing, setInitializing] = useState(true);
+  const [userReady, setUserReady] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      const load = async () => {
-        setLoading(true);
-        const data = await getGlobalFeed();
-        setPosts(data);
-        setLoading(false);
-      };
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) setUserReady(true);
+    });
 
-      load();
-    }, [])
-  );
+    return unsub;
+  }, []);
 
-  if (loading) {
+  const loadLikes = async (data) => {
+    const results = await Promise.all(
+      data.map(async (post) => {
+        try {
+          const liked = await isPostLiked(post.id);
+          return [post.id, liked];
+        } catch {
+          return [post.id, false];
+        }
+      })
+    );
+
+    const likeMap = Object.fromEntries(results);
+    setLikedPosts(likeMap);
+  };
+
+  useEffect(() => {
+    const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
+
+    const unsub = onSnapshot(q, async (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setPosts(data);
+      setInitializing(false);
+
+      loadLikes(data); // always try, safe inside helper
+    });
+
+    return unsub;
+  }, []);
+
+  const handleLike = async (postId) => {
+    const current = likedPosts[postId];
+
+    // optimistic UI
+    setLikedPosts(prev => ({
+      ...prev,
+      [postId]: !current,
+    }));
+
+    setPosts(prev =>
+      prev.map(p =>
+        p.id === postId
+          ? {
+              ...p,
+              likeCount: (p.likeCount || 0) + (current ? -1 : 1),
+            }
+          : p
+      )
+    );
+
+    try {
+      await toggleLike(postId);
+    } catch (e) {
+      // rollback
+      setLikedPosts(prev => ({
+        ...prev,
+        [postId]: current,
+      }));
+    }
+  };
+
+  if (initializing) {
     return (
       <View style={{
         flex: 1,
@@ -46,37 +121,32 @@ export default function HomeScreen({ navigation }) {
       backgroundColor: isDark ? '#000' : '#f5f5f5'
     }}>
       
-      <View
-        style={{
-          paddingHorizontal: 16,
-          paddingTop: 10,
-          paddingBottom: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: isDark ? '#1a1a1a' : '#e6e6e6',
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
+      {/* HEADER */}
+      <View style={{
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: isDark ? '#1a1a1a' : '#e6e6e6',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
         <View>
-          <Text
-            style={{
-              fontSize: 28,
-              fontWeight: '800',
-              color: isDark ? '#fff' : '#000',
-              letterSpacing: 2,
-            }}
-          >
+          <Text style={{
+            fontSize: 28,
+            fontWeight: '800',
+            color: isDark ? '#fff' : '#000',
+            letterSpacing: 2,
+          }}>
             IRON
           </Text>
 
-          <Text
-            style={{
-              fontSize: 12,
-              marginTop: 2,
-              color: isDark ? '#888' : '#666',
-            }}
-          >
+          <Text style={{
+            fontSize: 12,
+            marginTop: 2,
+            color: isDark ? '#888' : '#666',
+          }}>
             Global Training Feed
           </Text>
         </View>
@@ -88,36 +158,40 @@ export default function HomeScreen({ navigation }) {
               : require('../../../assets/logo-light.png')
           }
           resizeMode="contain"
-          style={{
-            width: 40,
-            height: 40,
-          }}
+          style={{ width: 40, height: 40 }}
         />
       </View>
+
+      {/* FEED */}
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{
-          padding: 12,
+          paddingHorizontal: 12,
+          paddingTop: 10,
           paddingBottom: 100,
         }}
+        ItemSeparatorComponent={() => (
+          <View style={{ height: 12 }} />
+        )}
         showsVerticalScrollIndicator={false}
-        style={{
-          backgroundColor: isDark ? '#000' : '#f5f5f5'
-        }}
         renderItem={({ item }) => (
           <FeedCard
             post={item}
             isDark={isDark}
+            liked={!!likedPosts[item.id]}
+            onLike={() => handleLike(item.id)}
+            onComment={() =>
+              navigation.navigate('Comments', {
+                postId: item.id,
+              })
+            }
             onPress={() =>
               navigation.navigate('PostViewer', {
                 postId: item.id,
               })
             }
           />
-        )}
-        ItemSeparatorComponent={() => (
-          <View style={{ height: 12 }} />
         )}
       />
     </SafeAreaView>

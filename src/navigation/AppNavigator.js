@@ -11,7 +11,7 @@ import SettingsScreen from '../screens/SettingScreen';
 import WorkoutDetailScreen from '../screens/WorkoutDetailScreen';
 import PostWorkoutViewer from '../screens/Posts/PostWorkoutViewer'
 import EditWorkoutScreen from '../screens/EditWorkoutScreen';
-
+import CommentsScreen from '../screens/Main Menu/Comments';
 import { useTheme } from '../screens/ThemeProvider';
 
 const Stack = createNativeStackNavigator();
@@ -55,6 +55,7 @@ export default function AppNavigator() {
         <Stack.Screen name="WorkoutDetail" component={WorkoutDetailScreen} />
         <Stack.Screen name="EditWorkout" component={EditWorkoutScreen} />
         <Stack.Screen name="PostViewer" component={PostWorkoutViewer} />
+        <Stack.Screen name="Comments" component={CommentsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

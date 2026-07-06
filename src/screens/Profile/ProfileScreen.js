@@ -167,6 +167,19 @@ export default function ProfileScreen({ navigation, settings }) {
         <Text style={styles.name}>{userProfile?.name || 'User'}</Text>
         <Text style={styles.username}>{'@' + userProfile?.username || 'Username'}</Text>
 
+        {/* BIO */}
+        {userProfile?.bio?.trim() ? (
+          <View style={styles.bioContainer}>
+            <Text style={styles.bio}>{userProfile.bio}</Text>
+          </View>
+        ) : (
+          <View style={styles.bioContainer}>
+            <Text style={styles.bioPlaceholder}>
+              No bio yet.
+            </Text>
+          </View>
+        )}
+
         {/* Age, Height, Weight Section */}
         <View style={styles.infoCard}>
           <Text style={styles.sectionTitle}>Stats</Text>
@@ -468,5 +481,24 @@ const getStyles = (isDark) =>
     color: '#fff',
     fontSize: 16,
     fontWeight: '600'
+  },
+  bioContainer: {
+    marginTop: -8,
+    marginBottom: 22,
+    paddingHorizontal: 20,
+  },
+
+  bio: {
+    textAlign: 'center',
+    fontSize: 15,
+    lineHeight: 22,
+    color: isDark ? '#ddd' : '#444',
+  },
+
+  bioPlaceholder: {
+    textAlign: 'center',
+    fontSize: 15,
+    fontStyle: 'italic',
+    color: isDark ? '#666' : '#999',
   },
 });

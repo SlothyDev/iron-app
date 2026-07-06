@@ -273,7 +273,7 @@ export default function ProfileSetupScreen({ navigation }) {
 
         <View>
           <TextInput
-              placeholder="Weight"
+              placeholder="Weight (Optional)"
               placeholderTextColor={isDark ? '#888' : '#aaa'}
               value={weight}
               onChangeText={setWeight}

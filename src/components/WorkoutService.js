@@ -12,6 +12,9 @@ import {
   Timestamp
 } from 'firebase/firestore';
 
+
+import { calculateWorkoutStats } from './WorkoutHelper';
+
 export async function saveUserWorkout(userId, workout) {
   const workoutId =
     workout.id || doc(collection(db, 'users', userId, 'workouts')).id;
@@ -25,7 +28,7 @@ export async function saveUserWorkout(userId, workout) {
     title: workout.title || "Untitled Workout",
     comments: workout.comments || "",
     isPublic: !!workout.isPublic,
-
+    elapsed: workout.elapsed ?? 0,
     workoutDate: workout.workoutDate || Timestamp.now(),
 
     likeCount: workout.likeCount ?? 0,
@@ -52,19 +55,21 @@ export async function publishWorkoutPost(userId, workout) {
   const userSnap = await getDoc(doc(db, 'users', userId));
   const user = userSnap.data();
 
+  const stats = calculateWorkoutStats(workout);
+
   const post = {
     ...workout,
 
     userId,
 
-    // 👇 feed identity fields
     username: user?.username || "Unknown",
     photoURL: user?.profilePicUrl || null,
+
+    totalVolume: stats.totalVolume * 1000,
 
     createdAt: workout.createdAt || serverTimestamp(),
   };
 
-  // 3. write to posts collection
   await setDoc(doc(db, 'posts', workout.id), post, { merge: true });
 }
 
