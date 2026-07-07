@@ -163,11 +163,8 @@ export default function SelectExerciseScreen({ navigation }) {
             <TouchableOpacity
               style={styles.exerciseCard}
               onPress={() =>
-                navigation.navigate('ExerciseDetails', {
+                navigation.push('ExerciseDetails', {
                   exercise: item,
-                  onComplete:
-                    navigation.getState().routes.find(r => r.name === 'WorkoutSession')
-                      ?.params?.onComplete,
                 })
               }
             >
@@ -204,7 +201,6 @@ const getStyles = (isDark) =>
       fontSize: 28,
       fontWeight: 'bold',
       color: isDark ? '#fff' : '#000',
-      marginTop: 50,
       marginBottom: 12,
       textAlign: 'center',
     },

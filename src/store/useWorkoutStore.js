@@ -7,6 +7,7 @@ const useWorkoutStore = create(
   isRunning: false,
   startTime: null,
   elapsed: 0,
+  hasRestoredSession: false,
   intervalId: null,
   exercises: [],
 
@@ -17,6 +18,7 @@ const useWorkoutStore = create(
       isRunning: true,
       startTime: now,
       elapsed: 0,
+      hasRestoredSession: false,
     });
   },
 
@@ -103,6 +105,12 @@ const useWorkoutStore = create(
     elapsed: state.elapsed,
     exercises: state.exercises,
   }),
+
+  onRehydrateStorage: () => (state) => {
+    if (state?.isRunning) {
+      state.hasRestoredSession = true;
+    }
+  },
 }
 )
 );

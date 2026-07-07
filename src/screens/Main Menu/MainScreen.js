@@ -3,7 +3,8 @@ import { View, FlatList, Text, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FeedCard from './FeedCard';
 import { useTheme } from '../ThemeProvider';
-import { toggleLike, isPostLiked } from '../../components/PostInteractions';
+import { toggleLike } from '../../components/PostInteractions';
+import { getLikedPosts } from '../../components/LikedPosts';
 import ResumeWorkoutModal from '../../components/ResumeWorkoutModal';
 import useWorkoutStore from '../../store/useWorkoutStore';
 
@@ -39,6 +40,9 @@ export default function HomeScreen({ navigation }) {
   }, []);
 
   const isRunning = useWorkoutStore((s)=>s.isRunning);
+  const hasRestoredSession = useWorkoutStore(
+    (s)=>s.hasRestoredSession
+  );
   const elapsed = useWorkoutStore((s)=>s.elapsed);
   const exercises = useWorkoutStore((s)=>s.exercises);
   const endSession = useWorkoutStore((s)=>s.endSession);
@@ -58,11 +62,10 @@ export default function HomeScreen({ navigation }) {
   const [showResume, setShowResume] = useState(false);
 
   useEffect(() => {
-    if (ready && isRunning) {
+    if (ready && hasRestoredSession) {
       setShowResume(true);
     }
-  }, [ready, isRunning]);
-
+  }, [ready, hasRestoredSession]);
   
 
   const loadLikes = async (data) => {
@@ -91,9 +94,11 @@ export default function HomeScreen({ navigation }) {
       }));
 
       setPosts(data);
-      setInitializing(false);
 
-      loadLikes(data); // always try, safe inside helper
+      const likedMap = await getLikedPosts();
+      setLikedPosts(likedMap);
+
+      setInitializing(false);
     });
 
     return unsub;
@@ -103,10 +108,17 @@ export default function HomeScreen({ navigation }) {
     const current = likedPosts[postId];
 
     // optimistic UI
-    setLikedPosts(prev => ({
-      ...prev,
-      [postId]: !current,
-    }));
+    setLikedPosts(prev => {
+      const updated = { ...prev };
+
+      if (current) {
+        delete updated[postId];
+      } else {
+        updated[postId] = true;
+      }
+
+      return updated;
+    });
 
     setPosts(prev =>
       prev.map(p =>

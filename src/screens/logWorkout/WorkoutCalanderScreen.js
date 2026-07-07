@@ -1,9 +1,13 @@
-import React, { useState, useCallback  } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useCallback,  } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { useTheme } from '../ThemeProvider';
 import { useNavigation } from '@react-navigation/native';
 import dayjs from 'dayjs';
+
+import useWorkoutStore from '../../store/useWorkoutStore';
+import { useFocusEffect } from '@react-navigation/native';
+import { CommonActions } from '@react-navigation/native';
 
 
 export default function WorkoutCalendarScreen() {
@@ -20,7 +24,6 @@ export default function WorkoutCalendarScreen() {
   };
 
   
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Choose a Day</Text>

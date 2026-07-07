@@ -43,14 +43,8 @@ export default function WorkoutSessionScreen() {
       state.startSession();
     }
 
-    // start timer after session exists
-    setTimeout(() => {
-      useWorkoutStore.getState().startTimer();
-    }, 100);
+    state.startTimer();
 
-    return () => {
-      stopTimer();
-    };
   }, []);
   
 
@@ -61,14 +55,8 @@ export default function WorkoutSessionScreen() {
   };
 
   const handleAddExercise = () => {
-    navigation.navigate('SelectExercise', {
-      onComplete: (newExercise) => {
-        console.log("WTF")
-        setExercises((prev) => [...prev, newExercise]);
-      },
-    });
+    navigation.navigate('SelectExercise');
   };
-
 
 
   const handleEndWorkout = () => {

@@ -9,6 +9,9 @@ import ExerciseDetails from '../screens/logWorkout/ExerciseDetailsScreen';
 import ConfirmWorkoutScreen from '../screens/logWorkout/ConfirmWorkoutScreen';
 import EditExerciseScreen from '../screens/logWorkout/EditExercise';
 
+import { Alert } from 'react-native';
+import useWorkoutStore from '../store/useWorkoutStore';
+
 const Stack = createNativeStackNavigator();
 
 export default function LogWorkoutStackNavigator() {
@@ -31,25 +34,39 @@ export default function LogWorkoutStackNavigator() {
           fontWeight: '600',
           fontSize: 20,
         },
-        headerBackTitleVisible: false,
+        headerBackButtonDisplayMode: 'minimal',
       }}
     >
       <Stack.Screen
         name="WorkoutCalander"
         component={WorkoutCalendarScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown:false }}
+        listeners={({navigation}) => ({
+          focus: () => {
+            const { isRunning } = useWorkoutStore.getState();
+
+            if (isRunning) {
+              navigation.replace("WorkoutSession");
+            }
+          }
+        })}
       />
 
       <Stack.Screen
         name="WorkoutSession"
         component={WorkoutSessionScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false,     gestureEnabled: false,}}
       />
 
       <Stack.Screen
         name="SelectExercise"
         component={SelectExerciseScreen}
-        options={{ headerShown: false }}
+        options={{
+          headerShown: true,
+          headerTitle: '',
+          headerBackVisible: false,
+          headerShadowVisible: false,
+        }}
       />
 
       <Stack.Screen

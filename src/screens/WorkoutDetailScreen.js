@@ -181,7 +181,7 @@ export default function WorkoutDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, paddingTop: 80, },
+  container: { flex: 1, padding: 16},
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 26, fontWeight: 'bold', textAlign: 'center' },
   comments: { fontSize: 14, textAlign: 'center', marginBottom: 10 },

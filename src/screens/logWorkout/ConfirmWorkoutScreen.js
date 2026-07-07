@@ -101,11 +101,11 @@ export default function ConfirmWorkoutScreen({navigation}) {
         commentCount: workout.commentCount ?? 0,
       };
       await saveWorkout(user.uid, workoutToSave);
+      useWorkoutStore.getState().endSession();
 
       Alert.alert('Success', 'Workout saved successfully');
 
-      useWorkoutStore.getState().endSession();
-      navigation.navigate("WorkoutCalander");
+      navigation.replace("WorkoutCalander");
 
     } catch (error) {
       Alert.alert('Error', 'Failed to save workout');
@@ -127,7 +127,7 @@ export default function ConfirmWorkoutScreen({navigation}) {
           style: 'destructive',
           onPress: () => {
             useWorkoutStore.getState().endSession();
-            navigation.navigate('WorkoutCalander');
+            navigation.replace('WorkoutCalander');
           },
         },
       ]
@@ -289,7 +289,7 @@ export default function ConfirmWorkoutScreen({navigation}) {
           <Text style={styles.finishButtonText}>Finish</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-          <Text style={styles.cancelButtonText}>Cancel</Text>
+          <Text style={styles.cancelButtonText}>Discard</Text>
         </TouchableOpacity>
         
       </View>
@@ -414,7 +414,7 @@ const getStyles = (isDark) =>
       paddingVertical: 10, 
       borderRadius: 10,
       alignItems: 'center',
-      width: '60%', 
+      width: '80%', 
     },
 
     cancelButtonText: {

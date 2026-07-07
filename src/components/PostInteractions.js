@@ -19,22 +19,39 @@ export async function toggleLike(postId) {
 
   const snap = await getDoc(likeRef);
 
+  const userLikeRef = doc(
+    db,
+    "users",
+    user.uid,
+    "likedPosts",
+    postId
+  );
+
   if (snap.exists()) {
     await deleteDoc(likeRef);
+    await deleteDoc(userLikeRef);
+
     await updateDoc(postRef, {
       likeCount: increment(-1),
     });
     return false;
   } else {
     await setDoc(likeRef, {
-      createdAt: new Date(),
+      createdAt: serverTimestamp(),
     });
+    
+    await setDoc(userLikeRef, {
+      createdAt: serverTimestamp(),
+    });
+
     await updateDoc(postRef, {
       likeCount: increment(1),
     });
     return true;
   }
 }
+
+// DEPRECATED
 
 export async function isPostLiked(postId) {
   const user = auth.currentUser;

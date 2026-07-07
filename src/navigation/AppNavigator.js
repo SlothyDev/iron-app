@@ -52,10 +52,47 @@ export default function AppNavigator() {
         <Stack.Screen name="MainTabs" component={MainTabs} />
         <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
-        <Stack.Screen name="WorkoutDetail" component={WorkoutDetailScreen} />
+        <Stack.Screen name="WorkoutDetail" 
+          component={WorkoutDetailScreen} 
+          options={{
+            headerShown: true,
+            title: "",
+            headerBackButtonDisplayMode: 'minimal',
+            headerStyle: {
+              backgroundColor: isDark ? "#000" : "#fff",
+            },
+            headerTintColor: isDark ? "#fff" : "#000",
+            headerShadowVisible: false,
+          }}
+        />
         <Stack.Screen name="EditWorkout" component={EditWorkoutScreen} />
-        <Stack.Screen name="PostViewer" component={PostWorkoutViewer} />
-        <Stack.Screen name="Comments" component={CommentsScreen} />
+        <Stack.Screen 
+          name="PostViewer"
+          component={PostWorkoutViewer}
+          options={{
+            headerShown: true,
+            title: "",
+            headerBackButtonDisplayMode: 'minimal',
+            headerStyle: {
+              backgroundColor: isDark ? "#000" : "#fff",
+            },
+            headerTintColor: isDark ? "#fff" : "#000",
+            headerShadowVisible: false,
+          }}
+        />
+        <Stack.Screen name="Comments" 
+          component={CommentsScreen} 
+          options={{
+            headerShown: true,
+            title: "",
+            headerBackButtonDisplayMode: 'minimal',
+            headerStyle: {
+              backgroundColor: isDark ? "#000" : "#fff",
+            },
+            headerTintColor: isDark ? "#fff" : "#000",
+            headerShadowVisible: false,
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

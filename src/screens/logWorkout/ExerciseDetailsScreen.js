@@ -19,6 +19,7 @@ import Feather from '@expo/vector-icons/Feather';
 
 
 export default function ExerciseDetailsScreen({ route, navigation }) {
+
   const { exercise } = route.params;
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -70,6 +71,7 @@ export default function ExerciseDetailsScreen({ route, navigation }) {
       Alert.alert('Sets cannot be empty!');
     }
   };
+
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: isDark ? '#000' : '#fff' }]}>

@@ -41,6 +41,14 @@ export default {
       "@react-native-community/datetimepicker",
     ],
 
+    runtimeVersion: {
+      policy: "appVersion",
+    },
+
+    updates: {
+      url: "https://u.expo.dev/a6cd55f7-b65a-425c-bc96-faf287eaa6a7",
+    },
+
     extra: {
       eas: {
         projectId: "a6cd55f7-b65a-425c-bc96-faf287eaa6a7",

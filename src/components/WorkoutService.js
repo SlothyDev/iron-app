@@ -9,11 +9,24 @@ import {
   query,
   orderBy,
   serverTimestamp,
-  Timestamp
+  Timestamp,
+  writeBatch,
 } from 'firebase/firestore';
 
 
 import { calculateWorkoutStats } from './WorkoutHelper';
+
+async function deleteSubcollection(collectionPath) {
+  const snapshot = await getDocs(collectionPath);
+
+  const batch = writeBatch(db);
+
+  snapshot.forEach((document) => {
+    batch.delete(document.ref);
+  });
+
+  await batch.commit();
+}
 
 export async function saveUserWorkout(userId, workout) {
   const workoutId =
@@ -153,15 +166,33 @@ export async function getWorkouts(userId) {
 
 export async function deleteWorkout(userId, workoutId) {
   try {
+    // Delete private workout
     const workoutRef = doc(db, 'users', userId, 'workouts', workoutId);
     await deleteDoc(workoutRef);
 
+
+    // Check if shared post exists
     const postRef = doc(db, 'posts', workoutId);
     const postSnap = await getDoc(postRef);
 
     if (postSnap.exists()) {
+
+      // Delete comments
+      await deleteSubcollection(
+        collection(db, 'posts', workoutId, 'comments')
+      );
+
+      // Delete likes
+      await deleteSubcollection(
+        collection(db, 'posts', workoutId, 'likes')
+      );
+
+
+      // Delete post itself
       await deleteDoc(postRef);
-      console.log("✅ post deleted");
+
+      console.log("✅ post + comments + likes deleted");
+
     } else {
       console.log("ℹ️ no post to delete (private workout)");
     }

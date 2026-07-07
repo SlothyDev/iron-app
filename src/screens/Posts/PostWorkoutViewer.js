@@ -154,7 +154,7 @@ export default function PostWorkoutViewer() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, paddingTop: 80 },
+  container: { flex: 1, padding: 16, },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   title: { fontSize: 26, fontWeight: 'bold', textAlign: 'center' },
