@@ -15,7 +15,7 @@ import {
   reauthenticateWithCredential,
   deleteUser,
 } from 'firebase/auth';
-import { doc, deleteDoc, collection, query, getDocs } from 'firebase/firestore';
+import { doc, deleteDoc, collection, query, getDoc, getDocs, collectionGroup, where } from 'firebase/firestore';
 import { ref, deleteObject, getStorage } from 'firebase/storage';
 import { db, app} from '../../firebase/firebase';
 const storage = getStorage(app);
@@ -75,12 +75,21 @@ export function DeleteAccountButton({ navigation }) {
     promiseRef.current?.reject(new Error('Reauthentication cancelled.'));
   };
 
+
+  async function deleteCollection(collectionRef) {
+    const snapshot = await getDocs(collectionRef);
+
+    for (const docSnap of snapshot.docs) {
+      await deleteDoc(docSnap.ref);
+    }
+  }
+
   const handleDeleteAccount = async () => {
     try {
       await reauthenticateUser();
 
-      // Now delete user data:
       const user = auth.currentUser;
+
       if (!user) {
         Alert.alert('Error', 'No logged-in user.');
         return;
@@ -88,34 +97,143 @@ export function DeleteAccountButton({ navigation }) {
 
       setLoading(true);
 
-      // Delete workouts
-      const workoutsQuery = query(collection(db, 'workouts'));
-      const workoutsSnapshot = await getDocs(workoutsQuery);
-      const deletePromises = workoutsSnapshot.docs.map((docSnap) => deleteDoc(docSnap.ref));
-      await Promise.all(deletePromises);
+      const uid = user.uid;
 
-      // Delete user doc
-      await deleteDoc(doc(db, 'users', user.uid));
-      console.log(storage);
-      // Delete profile pic (if exists)
-      const profilePicRef = ref(storage, `profile_pics/${user.uid}.jpg`);
-      console.log('Storage ref fullPath:', profilePicRef);
 
-      await deleteObject(profilePicRef).catch((err) => {
-        console.log(profilePicRef);
-        console.log(err);
-      });
+      /*
+        1. Delete user's workouts
+      */
+      const workoutsRef = collection(db, 'users', uid, 'workouts');
+      const workoutsSnap = await getDocs(workoutsRef);
 
-      // Delete user auth account
+      for (const workout of workoutsSnap.docs) {
+
+        // Delete public post if it exists
+        const postRef = doc(db, 'posts', workout.id);
+        const postSnap = await getDoc(postRef);
+
+        if (postSnap.exists()) {
+
+          // delete likes
+          await deleteCollection(
+            collection(db, 'posts', workout.id, 'likes')
+          );
+
+          // delete comments
+          await deleteCollection(
+            collection(db, 'posts', workout.id, 'comments')
+          );
+
+          await deleteDoc(postRef);
+        }
+
+
+        // delete workout
+        await deleteDoc(workout.ref);
+      }
+
+
+
+      /*
+        2. Delete likedPosts
+      */
+      await deleteCollection(
+        collection(db, 'users', uid, 'likedPosts')
+      );
+
+
+
+      /*
+        3. Delete username reservation
+      */
+      const userSnap = await getDoc(doc(db, 'users', uid));
+
+      if (userSnap.exists()) {
+        const username = userSnap.data().username;
+
+        if (username) {
+          await deleteDoc(
+            doc(db, 'usernames', username)
+          );
+        }
+      }
+
+
+      const commentsQuery = query(
+        collectionGroup(db, 'comments'),
+        where('userId', '==', uid)
+      );
+
+      const commentsSnap = await getDocs(commentsQuery);
+
+      for (const comment of commentsSnap.docs) {
+        await deleteDoc(comment.ref);
+      }
+
+
+      // Delete likes made by this user
+      const likesQuery = query(
+        collectionGroup(db, 'likes')
+      );
+
+      const likesSnap = await getDocs(likesQuery);
+
+      for (const like of likesSnap.docs) {
+        if (like.id === uid) {
+          await deleteDoc(like.ref);
+        }
+      }
+
+
+      /*
+        4. Delete user document
+      */
+      await deleteDoc(
+        doc(db, 'users', uid)
+      );
+
+
+
+      /*
+        5. Delete profile picture
+      */
+      const profilePicRef = ref(
+        storage,
+        `profile_pics/${uid}.jpg`
+      );
+
+      await deleteObject(profilePicRef)
+        .catch(() => {
+          console.log("No profile picture found");
+        });
+
+
+
+      /*
+        6. Delete Firebase Auth account
+      */
       await deleteUser(user);
 
-      Alert.alert('Account Deleted', 'Your account and all data have been removed.');
-      auth.signOut();
+
+      Alert.alert(
+        'Account Deleted',
+        'Your account and all data have been removed.'
+      );
+
       navigation.replace('Login');
-    } catch (error) {
+
+
+    } catch(error) {
+
+      console.error(error);
+
       if (error.message !== 'Reauthentication cancelled.') {
-        Alert.alert('Error', error.message);
+        Alert.alert(
+          'Error',
+          error.message
+        );
       }
+
     } finally {
       setLoading(false);
     }

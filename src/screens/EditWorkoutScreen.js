@@ -7,13 +7,21 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Switch,
 } from 'react-native';
 import dayjs from 'dayjs';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { doc, updateDoc, Timestamp } from 'firebase/firestore';
+import {
+  doc,
+  writeBatch,
+  Timestamp,
+  getDoc,
+} from 'firebase/firestore';
 import { db, auth } from '../firebase/firebase';
 import { useTheme } from './ThemeProvider';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { calculateWorkoutStats } from '../components/WorkoutHelper';
 
 /**
  * SAFE DATE CONVERTER
@@ -29,6 +37,13 @@ const toDate = (value) => {
   const d = new Date(value);
   return isNaN(d.getTime()) ? new Date() : d;
 };
+
+const functions = getFunctions();
+
+const deleteWorkoutPost = httpsCallable(
+  functions,
+  'deleteWorkoutPost'
+);
 
 const EditWorkoutScreen = () => {
   const navigation = useNavigation();
@@ -46,14 +61,32 @@ const EditWorkoutScreen = () => {
     workoutDate: workout.workoutDate || workout.date || new Date(),
   });
 
+
+
   const handleSave = async () => {
     try {
       const user = auth.currentUser;
+
       if (!user) {
         Alert.alert('Error', 'User not logged in');
         return;
       }
 
+      const batch = writeBatch(db);
+
+      const stats = calculateWorkoutStats(editableWorkout);
+
+      const updatedWorkout = {
+        ...editableWorkout,
+        workoutDate: Timestamp.fromDate(
+          toDate(editableWorkout.workoutDate)
+        ),
+        totalVolume: stats.totalVolume * 1000,
+        updatedAt: Timestamp.now(),
+      };
+
+
+      // Update private workout
       const workoutRef = doc(
         db,
         'users',
@@ -62,12 +95,72 @@ const EditWorkoutScreen = () => {
         workout.id
       );
 
-      await updateDoc(workoutRef, {
-        ...editableWorkout,
-        updatedAt: Timestamp.now(),
-      });
+      batch.update(workoutRef, updatedWorkout);
+
+
+
+      const postRef = doc(
+        db,
+        'posts',
+        workout.id
+      );
+
+
+      if (editableWorkout.isPublic) {
+
+        const userSnap = await getDoc(
+          doc(db, 'users', user.uid)
+        );
+
+        const userData = userSnap.data();
+
+        const stats = calculateWorkoutStats(editableWorkout);
+
+
+        const postData = {
+          ...editableWorkout,
+
+          id: workout.id,
+          userId: user.uid,
+
+          username: userData?.username || "Unknown",
+          photoURL: userData?.profilePicUrl || null,
+
+          totalVolume: stats.totalVolume * 1000,
+
+          likeCount: editableWorkout.likeCount ?? 0,
+          commentCount: editableWorkout.commentCount ?? 0,
+
+          createdAt: editableWorkout.createdAt || Timestamp.now(),
+
+          updatedAt: Timestamp.now(),
+
+          workoutDate: Timestamp.fromDate(
+            toDate(editableWorkout.workoutDate)
+          ),
+        };
+
+
+        batch.set(
+          postRef,
+          postData,
+          { merge: true }
+        );
+
+
+      } else {
+
+        await deleteWorkoutPost({
+          postId: workout.id,
+        });
+
+      }
+
+
+      await batch.commit();
 
       navigation.goBack();
+
     } catch (err) {
       console.error('Error updating workout:', err);
       Alert.alert('Error', 'Failed to update workout');
@@ -191,6 +284,24 @@ const EditWorkoutScreen = () => {
         <Text style={{ color: '#888' }}>No exercises</Text>
       )}
 
+
+      {/* TOGGLE VISIBILITY */}
+      <View style={styles.switchRow}>
+        <Text style={styles.label}>
+          Share to Feed
+        </Text>
+
+        <Switch
+          value={editableWorkout.isPublic}
+          onValueChange={(value) =>
+            setEditableWorkout({
+              ...editableWorkout,
+              isPublic: value,
+            })
+          }
+        />
+      </View>
+
       {/* SAVE */}
       <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
         <Text style={styles.saveText}>Save Changes</Text>
@@ -296,6 +407,12 @@ const getStyles = (isDark) =>
     },
 
     cancelText: { color: '#888' },
+    switchRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginVertical: 15,
+    },
   });
 
 export default EditWorkoutScreen;
