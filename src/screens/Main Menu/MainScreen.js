@@ -204,7 +204,7 @@ export default function HomeScreen({ navigation }) {
             color: isDark ? '#fff' : '#000',
             letterSpacing: 2,
           }}>
-            IRON
+            IRON.
           </Text>
 
           <Text style={{
