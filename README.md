@@ -1,4 +1,4 @@
-# 	Iron :weight_lifting: 
+# 	Iron  
 *A gym-centered social media app designed to help you achieve more than what you thought was possible.*
 
 *"As iron sharpens iron, so one person sharpens another"*
